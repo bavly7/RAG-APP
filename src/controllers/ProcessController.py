@@ -54,8 +54,6 @@ class ProcessController(BaseController):
             file_content_texts,
             metadatas=file_content_metadata
         )
-        print(f"chunk_size = {chunk_size}")
-        print(f"overlap_size = {overlap_size}")
 
         return chunks
         
