@@ -16,6 +16,9 @@ class Settings(BaseSettings):
         extra="ignore",  #It controls what happens when Pydantic finds configuration values that aren't defined as fields in your Settings class.
     )
 
+    MONGODB_URL : str
+    MONGODB_DATABASE :str
+
 
 def get_settings():
     return Settings()
