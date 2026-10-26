@@ -3,7 +3,8 @@ from typing import Optional
 from bson.objectid import ObjectId
 
 class Project(BaseModel):
-    _id : Optional[ObjectId]#MongoDB uses _id as the default name for a document's ID
+    #tells Pydantic that this field corresponds to MongoDB's field named
+    id : Optional[ObjectId]= Field(None, alias="_id")#MongoDB uses _id as the default name for a document's ID
     project_id: str = Field(..., min_length=1)
 
     @field_validator('project_id')
