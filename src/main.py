@@ -5,7 +5,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from contextlib import asynccontextmanager
 
-app = FastAPI()
 
 """@app.on_event("startup")
 async def startup_db_client():
@@ -29,6 +28,8 @@ async def lifespan(app: FastAPI):
     
     # Shutdown: Close DB connection
     app.mongo_conn.close()
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(base.base_router)
 app.include_router(data.data_router)
