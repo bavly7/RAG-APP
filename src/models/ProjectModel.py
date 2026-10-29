@@ -30,7 +30,7 @@ class ProjectModel(BaseDataModel):
         #. The await allows the function to suspend while waiting for that operation to complete, so it can use the result afterward.
         result = await self.collection.insert_one(project.model_dump(by_alias=True, exclude_none=True)) #instead of .dic()
         #You're querying the actual database, whose document field is named _id.You are not accessing a Pydantic model attribute here.
-        project._id = result.inserted_id 
+        project.id = result.inserted_id 
         return project
 
     async def get_project_or_create_one(self,project_id:str):
