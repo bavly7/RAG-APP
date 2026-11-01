@@ -9,6 +9,7 @@ class ChunkData(BaseModel):
     chunk_metadata :dict
     chunk_order : int = Field(...,gt=0) #gt == greater than 
     chunk_project_id : ObjectId
+    chunk_asset_id : ObjectId
 
     class Config: #let pydantic know what is ObjectId 
         arbitrary_types_allowed = True
