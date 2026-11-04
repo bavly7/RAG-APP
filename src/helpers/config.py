@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     STOP: list = None
     STREAMING: bool = False           # <-- default added
 
+    VECTOR_DB_BACKEND : str
+    VECTOR_DB_PATH : str
+    VECTOR_DB_DISTANCE_METHOD: str = None
+
 
 def get_settings():
     return Settings()
