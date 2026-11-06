@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # Groq-specific optional settings
     TOP_P: float = 1.0                # <-- default added
-    STOP: list = None
+    STOP: list[str] = []
     STREAMING: bool = False           # <-- default added
 
     VECTOR_DB_BACKEND : str
