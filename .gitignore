@@ -7,4 +7,4 @@ docker.md
 .postman/
 postman/
 Notes/
-assets/database
+src/assets/database/
