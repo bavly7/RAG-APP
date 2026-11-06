@@ -1,5 +1,5 @@
-from llm.LLMInterface import LLMInterface
-from llm.LLMEnums import OpenAIEnums
+from stores.llm.LLMInterface import LLMInterface
+from stores.llm.LLMEnums import OpenAIEnums
 from openai import OpenAI
 import logging
 

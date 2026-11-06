@@ -2,8 +2,8 @@ import logging
 
 from groq import Groq
 
-from llm.LLMInterface import LLMInterface
-from llm.LLMEnums import GroqAIEnums
+from stores.llm.LLMInterface import LLMInterface
+from stores.llm.LLMEnums import GroqAIEnums
 
 
 class GroqAIProvider(LLMInterface):
