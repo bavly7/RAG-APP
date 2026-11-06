@@ -73,7 +73,7 @@ class CoHereProvider(LLMInterface):
             return None
         
         input_type = CoHereEnums.DOCUMENT
-        if document_type == DocumentTypeEnum.QUERY:
+        if document_type == DocumentTypeEnum.QUERY.value:
             input_type = CoHereEnums.QUERY
 
         response = self.client.embed(
