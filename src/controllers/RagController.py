@@ -6,12 +6,13 @@ import json
 
 
 class RagController(BaseController):
-    def __init__(self,vectordb_client,generation_client,embedding_client):
+    def __init__(self,vectordb_client,generation_client,embedding_client,template_parser):
 #need Vecotor DB --> LLM form emb --> Generation Client
         super().__init__()
         self.vectordb_client=vectordb_client
         self.generation_client=generation_client
         self.embedding_client=embedding_client
+        self.template_parser=template_parser
 
     def create_collection_name(self,project_id:str):
         return f"collection_{project_id}".strip()
@@ -112,10 +113,58 @@ class RagController(BaseController):
             print("ERROR: No matching records found")
             return False
 
-        return json.loads(
-            json.dumps(results, default=lambda x: x.__dict__)
+        return results
+
+    def rag_answer_question(self, project: Project, query: str, limit: int = 5):
+
+        answer,full_prompt,chat_history = None,None,None
+
+        retrieved_docs = self.search_vector_db_collection(
+            project=project,
+            text=query,
+            limit= limit
+        )
+        if not retrieved_docs or len(retrieved_docs) ==0:
+            return answer,full_prompt,chat_history
+
+        system_prompt = self.template_parser.get("prompts","system_prompt")
+
+        # document_prompts = []
+        # for i , doc in enumerate(retrieved_docs):
+        #     document_prompts.append(
+        #         self.template_parser.get("prompts","document_prompt",{
+        #             "doc_num" : i + 1,
+        #             "chunk_text" : doc.text
+        #         })
+        #     )
+
+        document_prompts = "\n".join([
+            self.template_parser.get("prompts","document_prompt",
+                {
+                    "doc_num" : i + 1,
+                    "chunk_text" : doc.text
+                }
+            )
+            for i , doc in enumerate(retrieved_docs)
+        ])
+
+        footer_prompt = self.template_parser.get("prompts","footer_prompt")
+
+        chat_history = [
+            self.generation_client.construct_prompt(
+                prompt = system_prompt,
+                role = self.generation_client.enums.SYSTEM.value ,
+            )
+        ]
+
+        full_prompt = "\n\n".join([document_prompts,footer_prompt])
+
+        answer = self.generation_client.generate_text(
+            prompt = full_prompt,
+            chat_history=chat_history
         )
 
+        return answer , full_prompt,chat_history
 
 
 
