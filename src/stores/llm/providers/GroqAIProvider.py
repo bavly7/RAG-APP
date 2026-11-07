@@ -36,6 +36,8 @@ class GroqAIProvider(LLMInterface):
         self.embedding_size = None
 
         self.client = Groq(api_key=self.api_key)
+
+        self.enums = GroqAIEnums
         self.logger = logging.getLogger(__name__)
 
     # ------------------------------------------------------------------ #
