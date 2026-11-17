@@ -148,7 +148,9 @@ class RagController(BaseController):
             for i , doc in enumerate(retrieved_docs)
         ])
 
-        footer_prompt = self.template_parser.get("prompts","footer_prompt")
+        footer_prompt = self.template_parser.get("prompts","footer_prompt",{
+            "query":query
+        })
 
         chat_history = [
             self.generation_client.construct_prompt(
