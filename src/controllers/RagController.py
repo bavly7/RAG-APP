@@ -142,7 +142,7 @@ class RagController(BaseController):
             self.template_parser.get("prompts","document_prompt",
                 {
                     "doc_num" : i + 1,
-                    "chunk_text" : doc.text
+                    "chunk_text" : self.generation_client.process_text(doc.text),
                 }
             )
             for i , doc in enumerate(retrieved_docs)

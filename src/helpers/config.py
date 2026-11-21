@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     PRIMARY_LANGWAGE :str = "en"
 
 
+    POSTGRES_USERNAME :str
+    POSTGRES_PASSWORD :str
+    POSTGRES_HOST :str
+    POSTGRES_PORT :int
+    POSTGRES_MAIN_DATABASE :str
+
+
 
 def get_settings():
     return Settings()
