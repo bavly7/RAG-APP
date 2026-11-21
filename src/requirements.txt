@@ -12,3 +12,8 @@ openai == 3.42.1
 groq == 1.7.0
 cohere == 7.3.0
 qdrant-client == 1.20.0
+SQLAlchemy == 2.1.9
+asyncpg==0.32.0
+alembic==1.20.1
+psycopg[binary]
+SQLAlchemy[asyncio] == 2.1.9
