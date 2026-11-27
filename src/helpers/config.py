@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -45,10 +46,11 @@ class Settings(BaseSettings):
     STOP: list[str] = []
     STREAMING: bool = False           # <-- default added
 
+    VECTOR_DB_BACKEND_LITERAL : List[str] = None
     VECTOR_DB_BACKEND : str
     VECTOR_DB_PATH : str
     VECTOR_DB_DISTANCE_METHOD: str = None
-
+    VECTOR_DB_PGVEC_INDEX_THRESHOLD : int = 100
     
 
     DEFAULT_LANGUAGE : str = "en"
