@@ -15,41 +15,38 @@ class RagController(BaseController):
         self.template_parser=template_parser
 
     def create_collection_name(self,project_id:str):
-        return f"collection_{project_id}".strip()
+        return f"collection_{self.vectordb_client.default_vector_size}_{project_id}".strip()
 
-    def reset_vectordb_collection(self,project:Project):
+    async def reset_vectordb_collection(self,project:Project):
         collection_name = self.create_collection_name(project_id=project.project_id)
-        return self.vectordb_client.delete_collection(collection_name=collection_name)
+        return await self.vectordb_client.delete_collection(collection_name=collection_name)
 
 
-    def get_vectordb_collection_info(self,project:Project):
+    async def get_vectordb_collection_info(self,project:Project):
         collection_name = self.create_collection_name(project_id=project.project_id)
-        collection_info=self.vectordb_client.get_collection_info(collection_name=collection_name)
+        collection_info=await self.vectordb_client.get_collection_info(collection_name=collection_name)
 
         # return collection_info
         return json.loads(
             json.dumps(collection_info,default=lambda x:x.__dict__)
         )
 
-    def index_into_vector_db(self,project:Project,chunks:List[ChunkData], chunks_ids :List[int],do_reset:bool =False ):
+    async def index_into_vector_db(self,project:Project,chunks:List[ChunkData], chunks_ids :List[int],do_reset:bool =False ):
         collection_name = self.create_collection_name(project_id=project.project_id)
 
         texts = [c.chunk_text for c in chunks]
         metadata = [c.chunk_metadata for c in chunks]
-        vectors = [
-            self.embedding_client.embed_text(text=text , document_type = DocumentTypeEnum.DOCUMENT.value)
-            for text in texts
-        ]
+        vectors = self.embedding_client.embed_text(text=texts,document_type=DocumentTypeEnum.DOCUMENT.value)
 
 
-        _ = self.vectordb_client.create_collection(
+        _ = await self.vectordb_client.create_collection(
             collection_name= collection_name,
             embedding_size = self.embedding_client.embedding_size,
             do_reset=do_reset,
         )
 
 
-        insert_result = self.vectordb_client.insert_many(
+        insert_result = await self.vectordb_client.insert_many(
                 collection_name=collection_name,
                 texts=texts,
                 vectors=vectors,
@@ -81,8 +78,10 @@ class RagController(BaseController):
 
 
 
-    def search_vector_db_collection(self, project: Project, text: str, limit: int = 5):
+    async def search_vector_db_collection(self, project: Project, text: str, limit: int = 5):
 
+
+        query_vector = None
         collection_name = self.create_collection_name(
             project_id=project.project_id
         )
@@ -101,7 +100,14 @@ class RagController(BaseController):
             print("ERROR: Embedding generation failed")
             return False
 
-        results = self.vectordb_client.search_by_vector(
+        if isinstance(vector,list) and len(vector) > 0:
+            query_vector = vector[0]
+
+        if not query_vector:
+            return False
+
+
+        results = await self.vectordb_client.search_by_vector(
             collection_name=collection_name,
             vector=vector,
             limit=limit
@@ -115,11 +121,11 @@ class RagController(BaseController):
 
         return results
 
-    def rag_answer_question(self, project: Project, query: str, limit: int = 5):
+    async def rag_answer_question(self, project: Project, query: str, limit: int = 5):
 
         answer,full_prompt,chat_history = None,None,None
 
-        retrieved_docs = self.search_vector_db_collection(
+        retrieved_docs = await self.search_vector_db_collection(
             project=project,
             text=query,
             limit= limit
