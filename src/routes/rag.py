@@ -5,6 +5,7 @@ from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
 from controllers.RagController import RagController
 from models import ResponseSignal
+from tqdm.auto import tqdm
 
 import logging
 logger = logging.getLogger('uvicorn.error')
@@ -45,38 +46,59 @@ async def index_project(request:Request,project_id:int,push_request:PushRequest)
     has_records = True
     page_no = 1
     insert_item_counts = 0
-    idx = 0 
+    idx = 0
+
+    collection_name = rag_controller.create_collection_name(project_id=project.project_id)
+
+    _ = await request.app.vectordb_client.create_collection(
+        collection_name=collection_name,
+        embedding_size=request.app.embedding_client.embedding_size,
+        do_reset=push_request.do_reset,
+    )
+
+    total_chunks_count =await chunk_model.get_total_chunks_count(project_id=project.project_id)
+    pbar = tqdm(total=total_chunks_count, desc="Vector Indexing", position=0)
+    
     while has_records:
-        page_chunks = await chunk_model.get_poject_chunks(project_id=project.project_id,page_no=page_no)
-        if len(page_chunks):
-            page_no+=1
-        if not page_chunks or len(page_chunks)==0:
+
+        page_chunks = await chunk_model.get_poject_chunks(
+            project_id=project.project_id,
+            page_no=page_no
+        )
+
+        if not page_chunks:
             has_records = False
             break
 
-        chunks_ids = list(range(idx,idx + len(page_chunks)))
-        idx += len(page_chunks)
+        page_no += 1
 
-        is_inserted = rag_controller.index_into_vector_db(
+        chunks_ids = [c.chunk_id for c in page_chunks]
+
+        is_inserted = await rag_controller.index_into_vector_db(
             project=project,
-            chunks = page_chunks,
-            do_reset = push_request.do_reset,
-            chunks_ids = chunks_ids
+            chunks=page_chunks,
+            chunks_ids=chunks_ids
         )
+
         if not is_inserted:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
-                    "signal":ResponseSignal.INSERT_INTO_VECTORDB_ERROR.value
+                    "signal": ResponseSignal.INSERT_INTO_VECTORDB_ERROR.value
                 }
             )
+
+        pbar.update(len(page_chunks))
         insert_item_counts += len(page_chunks)
-        return JSONResponse(
-            content={
-                "signal":ResponseSignal.INSERT_INTO_VECTORDB_SUCCESS.value,
-                "insert_item_counts" : insert_item_counts
-            }
-        )
+
+
+    # This is OUTSIDE the while loop
+    return JSONResponse(
+        content={
+            "signal": ResponseSignal.INSERT_INTO_VECTORDB_SUCCESS.value,
+            "insert_item_counts": insert_item_counts
+        }
+    )
 
 
 @rag_router.get("/index/info/{project_id}")
@@ -93,7 +115,7 @@ async def get_project_index_info(request:Request,project_id:int):
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser
     )
-    collection_info = rag_controller.get_vectordb_collection_info(project=project)
+    collection_info = await rag_controller.get_vectordb_collection_info(project=project)
 
     return JSONResponse(
         content={
@@ -117,12 +139,12 @@ async def search_index(request:Request , project_id : int,search_request:SearchR
         embedding_client=request.app.embedding_client,
         template_parser= request.app.template_parser,
     )
-    results = rag_controller.search_vector_db_collection(
+    results = await rag_controller.search_vector_db_collection(
         project = project , text = search_request.text, limit = search_request.limit 
         )
     print(
     "Stored records:",
-    request.app.vectordb_client.get_collection_count("collection_1")
+    request.app.vectordb_client.get_collection_count()
 )
     if not results :
         return JSONResponse(
@@ -155,7 +177,7 @@ async def answer_rag(request:Request , project_id : int,search_request:SearchReq
         template_parser= request.app.template_parser,
     )
 
-    answer,full_prompt,chat_history = rag_controller.rag_answer_question(
+    answer,full_prompt,chat_history = await rag_controller.rag_answer_question(
         project=project,
         query = search_request.text,
         limit=search_request.limit
