@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
 
     # 2. Provider factory
     llm_provider_factory = LLMProviderFactory(settings)
-    vectordb_provider_factory = VectorDBProviderFactory(settings)
+    vectordb_provider_factory = VectorDBProviderFactory(config=settings , db_client=app.db_client)
 
     # 3. Generation client
     app.generation_client = llm_provider_factory.create(
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
     app.vectordb_client = vectordb_provider_factory.create(
         provider = settings.VECTOR_DB_BACKEND
     )
-    app.vectordb_client.connect()
+    await app.vectordb_client.connect()
 
     app.template_parser = TemplateParser(
         language = settings.PRIMARY_LANGWAGE,
@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI):
     # ---------------- Shutdown ----------------
     # app.mongo_conn.close()
     app.db_engine.dispose()
-    app.vectordb_client.disconnect()
+    await app.vectordb_client.disconnect()
 
 
 app = FastAPI(lifespan=lifespan)
